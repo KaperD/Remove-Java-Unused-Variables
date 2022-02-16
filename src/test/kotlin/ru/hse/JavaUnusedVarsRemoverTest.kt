@@ -318,7 +318,8 @@ internal class JavaUnusedVarsRemoverTest {
 
     @Test
     fun `test wrong java code`() {
-        val sourceCode = """
+        testSuccess(
+            """
                 public class Main {
                 
                     void f() {
@@ -331,15 +332,28 @@ internal class JavaUnusedVarsRemoverTest {
                     }
                 }
                 
+            """.trimIndent(),
+            """
+                public class Main {
+                
+                    void f() {
+                        class A {
+                
+                            fun f() {
+                                System.out.println(Main.this.x);
+                            }
+                        }
+                    }
+                }
+                
             """.trimIndent()
-        val remover = JavaUnusedVarsRemover()
-        val res = remover.removeUnused(sourceCode, false)
-        assertTrue(res.isFailure)
+        )
     }
 
     @Test
     fun `test another wrong java code`() {
-        val sourceCode = """
+        testSuccess(
+            """
                 public class Main {
                 
                     void f() {
@@ -350,10 +364,19 @@ internal class JavaUnusedVarsRemoverTest {
                     }
                 }
                 
+            """.trimIndent(),
+            """
+                public class Main {
+                
+                    void f() {
+                        a = b;
+                        class A {
+                        }
+                    }
+                }
+                
             """.trimIndent()
-        val remover = JavaUnusedVarsRemover()
-        val res = remover.removeUnused(sourceCode, false)
-        assertTrue(res.isFailure)
+        )
     }
 
     private fun testSuccess(sourceCode: String, expected: String) {

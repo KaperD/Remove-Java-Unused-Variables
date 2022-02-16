@@ -13,7 +13,6 @@ import com.github.javaparser.ast.visitor.Visitable
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter
 import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter
 import com.github.javaparser.resolution.Resolvable
-import com.github.javaparser.resolution.UnsolvedSymbolException
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration
 import com.github.javaparser.symbolsolver.JavaSymbolSolver
 import com.github.javaparser.symbolsolver.javaparsermodel.declarations.JavaParserFieldDeclaration
@@ -37,18 +36,15 @@ class JavaUnusedVarsRemover {
         if (saveOriginalLayout) {
             LexicalPreservingPrinter.setup(cu)
         }
-        try {
-            cu.accept(object : ModifierVisitor<Void>() {
-                override fun visit(n: VariableDeclarator, arg: Void?): Visitable? {
-                    if (!cu.uses(n)) {
-                        n.remove()
-                    }
-                    return super.visit(n, arg)
+        val usedVariables = cu.usedVariables()
+        cu.accept(object : ModifierVisitor<Void>() {
+            override fun visit(n: VariableDeclarator, arg: Void?): Visitable? {
+                if (!usedVariables.contains(VariableDeclaratorWrapper(n))) {
+                    return null
                 }
-            }, null)
-        } catch (e: UnsolvedSymbolException) {
-            return Result.failure(e)
-        }
+                return super.visit(n, arg)
+            }
+        }, null)
         return if (saveOriginalLayout) {
             Result.success(LexicalPreservingPrinter.print(cu))
         } else {
@@ -56,8 +52,8 @@ class JavaUnusedVarsRemover {
         }
     }
 
-    private fun Node.uses(variable: VariableDeclarator): Boolean {
-        var uses = false
+    private fun Node.usedVariables(): Set<VariableDeclaratorWrapper> {
+        val used = mutableSetOf<VariableDeclaratorWrapper>()
         accept(object : VoidVisitorAdapter<Void>() {
             override fun visit(n: NameExpr, arg: Void?) {
                 super.visit(n, arg)
@@ -72,22 +68,33 @@ class JavaUnusedVarsRemover {
             fun <T> visit(n: T)
                     where T : Resolvable<out ResolvedValueDeclaration>,
                           T : NodeWithSimpleName<*> {
-                if (n.nameAsString == variable.nameAsString) {
-
+                try {
                     val resolved = n.resolve()
                     if (resolved is JavaParserVariableDeclaration) {
-                        if (resolved.variableDeclarator === variable) {
-                            uses = true
-                        }
+                        used.add(VariableDeclaratorWrapper(resolved.variableDeclarator))
                     }
                     if (resolved is JavaParserFieldDeclaration) {
-                        if (resolved.variableDeclarator === variable) {
-                            uses = true
-                        }
+                        used.add(VariableDeclaratorWrapper(resolved.variableDeclarator))
                     }
+                } catch (ignored: Exception) {
+                    // We can't resolve static vars from other files, for example. Will ignore it
                 }
             }
         }, null)
-        return uses
+        return used
+    }
+
+    /**
+     * Used to compare VariableDeclarator by link
+     */
+    private class VariableDeclaratorWrapper(val variable: VariableDeclarator) {
+        override fun equals(other: Any?): Boolean {
+            if (other !is VariableDeclaratorWrapper) return false
+            return variable === other.variable
+        }
+
+        override fun hashCode(): Int {
+            return variable.hashCode()
+        }
     }
 }
