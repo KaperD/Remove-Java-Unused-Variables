@@ -39,7 +39,7 @@ internal class JavaUnusedVarsRemoverTest {
         testSuccess(
             """
                 public class Main {
-                    int x;
+                    public int x;
                 
                     void f() {
                         int x = 3;
@@ -115,7 +115,7 @@ internal class JavaUnusedVarsRemoverTest {
         testSuccess(
             """
                 public class Main {
-                    int a,b,c = 4;
+                    private int a,b,c = 4;
                 
                     void f() {
                         Integer x = 3, y = 2, z = 8;
@@ -128,7 +128,7 @@ internal class JavaUnusedVarsRemoverTest {
             """
                 public class Main {
                 
-                    int b;
+                    private int b;
                 
                     void f() {
                         Integer y = 2;
