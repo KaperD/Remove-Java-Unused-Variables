@@ -26,6 +26,11 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "11"
 }
 
+tasks.withType<JavaCompile> {
+    targetCompatibility = "11"
+    sourceCompatibility = "11"
+}
+
 application {
     mainClass.set("MainKt")
 }
