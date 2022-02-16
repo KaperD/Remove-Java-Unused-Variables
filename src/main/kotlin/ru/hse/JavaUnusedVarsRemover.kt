@@ -13,6 +13,7 @@ import com.github.javaparser.ast.visitor.Visitable
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter
 import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter
 import com.github.javaparser.resolution.Resolvable
+import com.github.javaparser.resolution.UnsolvedSymbolException
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration
 import com.github.javaparser.symbolsolver.JavaSymbolSolver
 import com.github.javaparser.symbolsolver.javaparsermodel.declarations.JavaParserFieldDeclaration
@@ -36,14 +37,18 @@ class JavaUnusedVarsRemover {
         if (saveOriginalLayout) {
             LexicalPreservingPrinter.setup(cu)
         }
-        cu.accept(object : ModifierVisitor<Void>() {
-            override fun visit(n: VariableDeclarator, arg: Void?): Visitable? {
-                if (!cu.uses(n)) {
-                    n.remove()
+        try {
+            cu.accept(object : ModifierVisitor<Void>() {
+                override fun visit(n: VariableDeclarator, arg: Void?): Visitable? {
+                    if (!cu.uses(n)) {
+                        n.remove()
+                    }
+                    return super.visit(n, arg)
                 }
-                return super.visit(n, arg)
-            }
-        }, null)
+            }, null)
+        } catch (e: UnsolvedSymbolException) {
+            return Result.failure(e)
+        }
         return if (saveOriginalLayout) {
             Result.success(LexicalPreservingPrinter.print(cu))
         } else {
