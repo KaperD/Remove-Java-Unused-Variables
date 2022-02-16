@@ -33,4 +33,5 @@ tasks.withType<JavaCompile> {
 
 application {
     mainClass.set("MainKt")
+    applicationName = "remove-unused"
 }

@@ -15,7 +15,7 @@ fun main(args: Array<String>) = RemoveUnused().main(args)
 private class RemoveUnused : CliktCommand() {
     val saveOriginalLayout: Boolean by option("-r", "--raw", help = "Enables saving original layout of code")
         .flag()
-    val outputFile: File? by option("-o", "--output", help = "File to save output").file()
+    val outputFile: File? by option("-o", "--output", help = "File to save result").file()
         .check("File should be correct") {
             return@check !it.exists() || it.isFile && it.canWrite()
     }
