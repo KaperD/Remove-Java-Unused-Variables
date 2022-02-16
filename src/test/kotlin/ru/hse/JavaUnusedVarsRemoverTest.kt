@@ -19,6 +19,10 @@ internal class JavaUnusedVarsRemoverTest {
                     }
                 }
                 
+                interface I {
+                    int y = 1;
+                }
+                
             """.trimIndent(),
             """
                 public class Main {
@@ -28,6 +32,9 @@ internal class JavaUnusedVarsRemoverTest {
                     void f() {
                         int x = 3;
                     }
+                }
+                
+                interface I {
                 }
                 
             """.trimIndent()
@@ -172,6 +179,31 @@ internal class JavaUnusedVarsRemoverTest {
                 }
                 
             """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `test access public field`() {
+        val sourceCode = """
+                public class Main {
+                
+                    public A a = new A();
+                
+                    public static void main(String[] args) {
+                        Main m = new Main();
+                        System.out.println(m.a.x);
+                    }
+                
+                    static class A {
+                
+                        public int x = 3;
+                    }
+                }
+
+            """.trimIndent()
+        testSuccess(
+            sourceCode,
+            sourceCode
         )
     }
 
