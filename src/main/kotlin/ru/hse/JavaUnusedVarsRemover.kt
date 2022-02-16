@@ -18,34 +18,17 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver
 import com.github.javaparser.symbolsolver.javaparsermodel.declarations.JavaParserFieldDeclaration
 import com.github.javaparser.symbolsolver.javaparsermodel.declarations.JavaParserVariableDeclaration
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver
-import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.deleteIfExists
 
-
-/**
- * Some code that uses JavaParser.
- */
 class JavaUnusedVarsRemover {
     private val languageLevel: LanguageLevel = LanguageLevel.BLEEDING_EDGE
 
     fun removeUnused(sourceCode: String, saveOriginalLayout: Boolean): Result<String> {
-        val dir = createTempDirectory("JavaUnusedVarsRemover")
         val parser = JavaParser(
             ParserConfiguration()
                 .setLanguageLevel(languageLevel)
-                .setSymbolResolver(
-                    JavaSymbolSolver(
-                        CombinedTypeSolver()
-//                        JavaParserTypeSolver(
-//                            dir,
-//                            ParserConfiguration().setLanguageLevel(languageLevel)
-//                        )
-                    )
-                )
+                .setSymbolResolver(JavaSymbolSolver(CombinedTypeSolver()))
         )
         val parseResult = parser.parse(sourceCode)
-        dir.deleteIfExists()
         if (parseResult.result.isEmpty) {
             return Result.failure(IllegalArgumentException("Wrong Java source code"))
         }
@@ -82,18 +65,18 @@ class JavaUnusedVarsRemover {
             }
 
             fun <T> visit(n: T)
-                where T : Resolvable<out ResolvedValueDeclaration>,
-                      T : NodeWithSimpleName<*> {
+                    where T : Resolvable<out ResolvedValueDeclaration>,
+                          T : NodeWithSimpleName<*> {
                 if (n.nameAsString == variable.nameAsString) {
 
                     val resolved = n.resolve()
                     if (resolved is JavaParserVariableDeclaration) {
-                        if (resolved.variableDeclarator == variable) {
+                        if (resolved.variableDeclarator === variable) {
                             uses = true
                         }
                     }
                     if (resolved is JavaParserFieldDeclaration) {
-                        if (resolved.variableDeclarator == variable) {
+                        if (resolved.variableDeclarator === variable) {
                             uses = true
                         }
                     }
